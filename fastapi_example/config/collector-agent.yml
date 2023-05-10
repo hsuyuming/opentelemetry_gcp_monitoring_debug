@@ -1,0 +1,51 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4320
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'testing'
+          scrape_interval: 5s
+          static_configs:
+            - targets: ['<your ip>:5005']
+
+processors:
+  batch:
+    timeout: 1s
+  resourcedetection:
+    detectors: [gcp]
+    timeout: 10s
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 65
+    spike_limit_percentage: 20
+
+
+exporters:
+  prometheus:
+    endpoint: "<your ip>:8889"
+    send_timestamps: true
+    namespace: promexample
+    enable_open_metrics: true
+    const_labels:
+      label1: value1
+  googlecloud:
+    project: <your project>
+    retry_on_faulure:
+      enable: false
+    metric:
+      prefix: custom.googleapis.com/custom/debug0510
+
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [googlecloud]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [googlecloud]
